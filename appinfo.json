@@ -1,0 +1,19 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "Joseph Choi",
+    "longName": "born again simon with hands",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "shortName": "bash",
+    "uuid": "7c4ef682-a557-4059-873c-9255e65eb1fa",
+    "versionCode": 1,
+    "versionLabel": "0.1",
+    "watchapp": {
+        "watchface": false
+    }
+}
