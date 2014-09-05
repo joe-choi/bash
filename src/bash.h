@@ -8,7 +8,8 @@ void handle_deinit(void);
 enum Actions {
   UP=0,
   MIDDLE=1,
-  DOWN=2
+  DOWN=2,
+  SHAKE=3
 };
 
 #endif

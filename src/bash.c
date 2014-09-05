@@ -25,7 +25,7 @@ GFont robotoR;
 GFont robotoS;
 GFont robotoGame;
 
-const int NUM_COMMANDS = 3;
+const int NUM_COMMANDS = 4;
 const int STARTING_CAP = 10;
 int capacity;
 int size;
@@ -62,13 +62,12 @@ static void changeHighscoreIfNeeded () {
   score = 0;
 }
 
-static void verification_handler(ClickRecognizerRef recognizer, void *context) {
+static void unifiedVerifier (int action) {
   verifIterator ++;
   bool potentialSuccessfulRound = verifIterator + 1 == size;
-  int button = click_recognizer_get_button_id(recognizer) - 1;
-  bool rightAction = sequence [verifIterator] == button;
+  bool rightAction = sequence [verifIterator] == action;
   // For info purposes only
-  switch (button) {
+  switch (action) {
     case 0:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED UP");
       break;
@@ -77,6 +76,9 @@ static void verification_handler(ClickRecognizerRef recognizer, void *context) {
       break;
     case 2:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED DOWN");
+      break;
+    case 3:
+      APP_LOG(APP_LOG_LEVEL_INFO, "YOU SHOOK THE PEBBLE");
       break;
     default:
       APP_LOG(APP_LOG_LEVEL_ERROR, "???");
@@ -97,10 +99,18 @@ static void verification_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
+static void veriShake_handler(AccelAxisType axis, int32_t direction) {
+  unifiedVerifier (3);
+}
+
+static void veriButton_handler(ClickRecognizerRef recognizer, void *context) {
+  unifiedVerifier (click_recognizer_get_button_id(recognizer) - 1);
+}
+
 static void sequence_config_provider (void *context) {
-  window_single_click_subscribe(BUTTON_ID_UP, verification_handler);
-  window_single_click_subscribe(BUTTON_ID_SELECT, verification_handler);
-  window_single_click_subscribe(BUTTON_ID_DOWN, verification_handler);
+  window_single_click_subscribe(BUTTON_ID_UP, veriButton_handler);
+  window_single_click_subscribe(BUTTON_ID_SELECT, veriButton_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, veriButton_handler);
   window_single_click_subscribe(BUTTON_ID_BACK, exit_handler);
 }
 
@@ -114,9 +124,11 @@ static void sequenceInput_load () {
   text_layer_set_text_color(enterNow, GColorWhite);
   text_layer_set_text (enterNow, "Enter sequence now!");
   layer_add_child(window_get_root_layer(sequenceInput), text_layer_get_layer(enterNow));
+  accel_tap_service_subscribe(veriShake_handler);
 }
 
 static void sequenceInput_unload () {
+  accel_tap_service_unsubscribe();
   text_layer_destroy(enterNow);
   window_destroy(sequenceInput);
   APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Unload");
@@ -145,6 +157,8 @@ static void changeAction_callback (void* move) {
     case DOWN:
       text_layer_set_text(action, "DOWN");
       break;
+    case SHAKE:
+      text_layer_set_text(action, "shake!");
   }
 }
 
@@ -157,7 +171,7 @@ static void addElement() {
   APP_LOG(APP_LOG_LEVEL_INFO, "Adding another element.");
   size ++;
   if (size <= capacity) {
-    sequence [size - 1] = rand() % NUM_COMMANDS; // 0,1,2
+    sequence [size - 1] = rand() % NUM_COMMANDS; // 0,1,2,3
   } else {
     APP_LOG(APP_LOG_LEVEL_INFO, "Reached capacity on ACTIONS, doubling");
     int* destroy = sequence;
@@ -174,8 +188,15 @@ static void displaySequence(void* iteration) {
   timer = NULL;
   if ((int)iteration < size) {
     changeAction ((void*)sequence[(int)iteration]);
-    if (sequence[(int)iteration] == 0) { APP_LOG(APP_LOG_LEVEL_INFO, "up"); } else if (sequence [(int)iteration] == 1) { APP_LOG(APP_LOG_LEVEL_INFO, "middle");
-                                                                                             } else { APP_LOG(APP_LOG_LEVEL_INFO, "down");}
+    if (sequence[(int)iteration] == 0) {
+      APP_LOG(APP_LOG_LEVEL_INFO, "up");
+    } else if (sequence [(int)iteration] == 1) {
+      APP_LOG(APP_LOG_LEVEL_INFO, "middle");
+    } else if (sequence [(int)iteration] == 2) {
+      APP_LOG(APP_LOG_LEVEL_INFO, "down");
+    } else {
+      APP_LOG(APP_LOG_LEVEL_INFO, "shake");
+    }
     timer = app_timer_register(1050, (AppTimerCallback)displaySequence, (void*)((int)iteration+1));
   } else {
     sequenceInput_callback ();
@@ -386,7 +407,7 @@ void handle_init(void) {
   robotoS = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TEXT_14));
   robotoGame = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TEXT_28));
   
-  text_layer_set_text(title, "bash"); 
+  text_layer_set_text(title, "bash");
 	text_layer_set_font(title, robotoB);
 	text_layer_set_text_alignment(title, GTextAlignmentCenter);
   text_layer_set_text_color(title, GColorWhite);
