@@ -6,6 +6,7 @@ Window *menu;
 Window *game;
 Window *sequenceInput;
 Window *optionsWindow;
+Window *aboutWindow;
 
 TextLayer *title;
 TextLayer *start;
@@ -16,6 +17,13 @@ TextLayer *action;
 TextLayer *enterNow;
 TextLayer *hs;
 TextLayer *option1;
+TextLayer *aboutMe;
+TextLayer *aboutMe2;
+
+GFont robotoB;
+GFont robotoR;
+GFont robotoS;
+GFont robotoGame;
 
 const int NUM_COMMANDS = 3;
 const int STARTING_CAP = 10;
@@ -48,7 +56,7 @@ static void changeHighscoreIfNeeded () {
     highscore = score;
     APP_LOG(APP_LOG_LEVEL_INFO, "Changing highscore");
     static char buffer[20];
-    snprintf(buffer, sizeof(buffer), "Highscore: %d", highscore);
+    snprintf(buffer, sizeof(buffer), "Highscore\n%d", highscore);
     text_layer_set_text(hs, buffer);
   }
   score = 0;
@@ -79,15 +87,13 @@ static void verification_handler(ClickRecognizerRef recognizer, void *context) {
     onlyForReappearance = true; // Only when round is passed!
     snprintf(buffer, sizeof(buffer), "Good job!\nNext round: %d", size + 1);
     text_layer_set_text(enterNow, buffer);
-    app_timer_register(1000, (AppTimerCallback)nextRound_callback, NULL);
+    app_timer_register(1800, (AppTimerCallback)nextRound_callback, NULL);
     score += 10;
   } else if (!rightAction) {  // Lost the entire game
     snprintf(buffer, sizeof(buffer), "Game Over.\nScore: %d", score);
     text_layer_set_text(enterNow, buffer);
     changeHighscoreIfNeeded();
-    app_timer_register(1000, (AppTimerCallback)gameover_callback, NULL);
-  } else if (!potentialSuccessfulRound && rightAction) {
-    //score += 10;
+    app_timer_register(2000, (AppTimerCallback)gameover_callback, NULL);
   }
 }
 
@@ -101,8 +107,12 @@ static void sequence_config_provider (void *context) {
 static void sequenceInput_load () {
   APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Load");
   verifIterator = -1;
-  enterNow = text_layer_create(GRect(0,0,144,168));
-  text_layer_set_text (enterNow, "Enter the sequence!");
+  enterNow = text_layer_create(GRect(0,50,144,50));
+  text_layer_set_background_color(enterNow, GColorBlack);
+  text_layer_set_font(enterNow, robotoR);
+  text_layer_set_text_alignment(enterNow, GTextAlignmentCenter);
+  text_layer_set_text_color(enterNow, GColorWhite);
+  text_layer_set_text (enterNow, "Enter sequence now!");
   layer_add_child(window_get_root_layer(sequenceInput), text_layer_get_layer(enterNow));
 }
 
@@ -115,6 +125,7 @@ static void sequenceInput_unload () {
 static void sequenceInput_callback () {
   sequenceInput = window_create();
   window_set_click_config_provider(sequenceInput, sequence_config_provider);
+  window_set_background_color(sequenceInput, GColorBlack);
   //window_set_fullscreen(sequenceInput, true);
   window_set_window_handlers(sequenceInput, (WindowHandlers) {
     .load = sequenceInput_load,
@@ -173,7 +184,11 @@ static void displaySequence(void* iteration) {
 
 static void game_load () {
   APP_LOG(APP_LOG_LEVEL_INFO, "Game Load");
-  action = text_layer_create(GRect(0,0,50,200));
+  action = text_layer_create(GRect(0,50,144,50));
+  text_layer_set_background_color(action, GColorBlack);
+  text_layer_set_text_color(action, GColorWhite);
+  text_layer_set_text_alignment(action, GTextAlignmentCenter);
+  text_layer_set_font(action, robotoGame);
   capacity = STARTING_CAP;
   size = 0;
   score = 0;
@@ -212,6 +227,7 @@ static void game_appear () {
 static void gameStart_callback () {
   game = window_create();
   //window_set_fullscreen(game, true);
+  window_set_background_color(game, GColorBlack);
   window_set_window_handlers(game, (WindowHandlers) {
     .load = game_load,
     .unload = game_unload,
@@ -223,16 +239,20 @@ static void gameStart_callback () {
 
 static void changeCountdown_callback () {
   text_layer_set_text(countdown, "GO!");
+  app_timer_register(1000, (AppTimerCallback)gameStart_callback, NULL);
 }
 
 static void ready_load () {
   APP_LOG(APP_LOG_LEVEL_INFO, "Ready Load");
   // output sequence.
-  countdown = text_layer_create(GRect(0,0,50,50));
+  countdown = text_layer_create(GRect(0,60,144,50));
+  text_layer_set_font(countdown, robotoGame);
+  text_layer_set_text_color(countdown, GColorWhite);
+  text_layer_set_background_color(countdown, GColorBlack);
+  text_layer_set_text_alignment(countdown, GTextAlignmentCenter);
   text_layer_set_text(countdown, "Ready...");
   layer_add_child(window_get_root_layer(ready), text_layer_get_layer(countdown));
   app_timer_register(2000, (AppTimerCallback)changeCountdown_callback, NULL);
-  app_timer_register(3000, (AppTimerCallback)gameStart_callback, NULL); // This will actually initiate the game window
 }
 
 static void ready_unload () {
@@ -244,7 +264,8 @@ static void ready_unload () {
 static void ready_handler (ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Clicked Start");
   ready = window_create ();
-  //window_set_fullscreen(ready, true);
+  window_set_background_color(ready, GColorBlack);
+  window_set_fullscreen(ready, true);
   window_set_window_handlers(ready, (WindowHandlers) {
     .load = ready_load,
     .unload = ready_unload
@@ -254,7 +275,11 @@ static void ready_handler (ClickRecognizerRef recognizer, void *context) {
 
 static void optionsWindow_load () {
   APP_LOG(APP_LOG_LEVEL_INFO, "OptionsWindow Load");
-  option1 = text_layer_create(GRect(0,0,140,50));
+  option1 = text_layer_create(GRect(0,10,144,40));
+  text_layer_set_font(option1, robotoR);
+  text_layer_set_text_alignment(option1, GTextAlignmentCenter);
+  text_layer_set_text_color(option1, GColorWhite);
+  text_layer_set_background_color(option1, GColorBlack);
   text_layer_set_text(option1, "Reset Highscore");
   layer_add_child(window_get_root_layer(optionsWindow), text_layer_get_layer(option1));
 }
@@ -265,10 +290,16 @@ static void optionsWindow_unload () {
   APP_LOG(APP_LOG_LEVEL_INFO, "OptionsWindow unload");
 }
 
+static void optionChangeBackFromConfirmation_callback () {
+  text_layer_set_text(option1, "Reset Highscore");
+}
+
 static void option1_handler(ClickRecognizerRef crr, void* context) {
   highscore = -1;
   changeHighscoreIfNeeded ();
   APP_LOG(APP_LOG_LEVEL_INFO, "Scores reset");
+  text_layer_set_text(option1, "Reset Highscore\n  ...Done!");
+  app_timer_register(900, optionChangeBackFromConfirmation_callback, NULL);
 }
 
 static void optionsWindow_click_config_provider (void *context)  {
@@ -278,6 +309,8 @@ static void optionsWindow_click_config_provider (void *context)  {
 static void optionsWindow_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Click options");
   optionsWindow = window_create ();
+  window_set_fullscreen(optionsWindow, true);
+  window_set_background_color(optionsWindow, GColorBlack);
   window_set_click_config_provider(optionsWindow, optionsWindow_click_config_provider);
   window_set_window_handlers(optionsWindow, (WindowHandlers) {
     .load = optionsWindow_load,
@@ -286,9 +319,47 @@ static void optionsWindow_handler(ClickRecognizerRef recognizer, void *context) 
   window_stack_push (optionsWindow, true);
 }
 
+static void aboutWindow_load () {
+  APP_LOG(APP_LOG_LEVEL_INFO, "AboutWindow Load");
+  aboutMe = text_layer_create(GRect(0,5,144,20));
+  text_layer_set_text_alignment(aboutMe, GTextAlignmentCenter);
+  text_layer_set_text_color(aboutMe, GColorWhite);
+  text_layer_set_background_color(aboutMe, GColorBlack);
+  text_layer_set_font(aboutMe, robotoR);
+  text_layer_set_text(aboutMe, "bash");
+  
+  aboutMe2 = text_layer_create(GRect(0,30,144,138));
+  text_layer_set_text_alignment(aboutMe2, GTextAlignmentCenter);
+  text_layer_set_text_color(aboutMe2, GColorWhite);
+  text_layer_set_background_color(aboutMe2, GColorBlack);
+  text_layer_set_font(aboutMe2, robotoS);
+  text_layer_set_text(aboutMe2, "born again simon with hands\n[Simon for Pebble]\n\n\n\nBy Joseph Choi\njoechoi7@gmail.com\nv0.6");
+  layer_add_child(window_get_root_layer(aboutWindow), text_layer_get_layer(aboutMe));
+  layer_add_child(window_get_root_layer(aboutWindow), text_layer_get_layer(aboutMe2));
+}
+
+static void aboutWindow_unload () {
+  text_layer_destroy(aboutMe);
+  window_destroy(aboutWindow);
+  APP_LOG(APP_LOG_LEVEL_INFO, "AboutWindow Unload");
+}
+
+static void aboutWindow_handler(ClickRecognizerRef rec, void* context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Click About");
+  aboutWindow = window_create();
+  window_set_fullscreen(aboutWindow, true);
+  window_set_background_color(aboutWindow, GColorBlack);
+  window_set_window_handlers(aboutWindow, (WindowHandlers) {
+    .load = aboutWindow_load,
+    .unload = aboutWindow_unload
+  });
+  window_stack_push (aboutWindow, true);
+}
+
 static void config_provider (void *context) {
   window_single_click_subscribe(BUTTON_ID_UP, ready_handler);
   window_single_click_subscribe(BUTTON_ID_SELECT, optionsWindow_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, aboutWindow_handler);
 }
 
 void handle_init(void) {
@@ -301,31 +372,52 @@ void handle_init(void) {
 	menu = window_create(); // Creation
   window_set_click_config_provider(menu, config_provider); // Setting click config callback
   window_set_fullscreen (menu, true); // fullscreen
+  window_set_background_color(menu, GColorBlack);
 	window_stack_push(menu, true); // push onto window stack
   // Making and setting text layers
-	title = text_layer_create(GRect(0, 0, 144, 30));
-  start = text_layer_create(GRect(0, 35, 144, 30));
-  options = text_layer_create (GRect(0, 65, 144, 30));
-  about = text_layer_create (GRect(0, 95, 144, 30));
-  hs = text_layer_create(GRect(0, 125, 144, 30));
+	title = text_layer_create(GRect(0, 0, 144, 40));
+  start = text_layer_create(GRect(0, 45, 144, 20));
+  options = text_layer_create (GRect(0, 65, 144, 20));
+  about = text_layer_create (GRect(0, 85, 144, 20));
+  hs = text_layer_create(GRect(0, 115, 144, 40));
+  
+  robotoB = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TITLE_33));
+  robotoR = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TEXT_18));
+  robotoS = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TEXT_14));
+  robotoGame = fonts_load_custom_font (resource_get_handle (RESOURCE_ID_FONT_ROBOTO_BOLD_TEXT_28));
   
   text_layer_set_text(title, "bash"); 
-	text_layer_set_font(title, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(title, robotoB);
 	text_layer_set_text_alignment(title, GTextAlignmentCenter);
+  text_layer_set_text_color(title, GColorWhite);
+  text_layer_set_background_color(title, GColorBlack);
+  
   text_layer_set_text(start, "Start");
-	text_layer_set_font(start, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(start, robotoR);
 	text_layer_set_text_alignment(start, GTextAlignmentCenter);
+  text_layer_set_text_color(start, GColorWhite);
+  text_layer_set_background_color(start, GColorBlack);
+  
   text_layer_set_text(options, "Options");
-	text_layer_set_font(options, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(options, robotoR);
 	text_layer_set_text_alignment(options, GTextAlignmentCenter);
+  text_layer_set_text_color(options, GColorWhite);
+  text_layer_set_background_color(options, GColorBlack);
+  
   text_layer_set_text(about, "About");
-	text_layer_set_font(about, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(about, robotoR);
 	text_layer_set_text_alignment(about, GTextAlignmentCenter);
-  static char buffer [] = "Highscore: 999";
-  snprintf(buffer, sizeof(buffer), "Highscore: %d", highscore);
+  text_layer_set_text_color(about, GColorWhite);
+  text_layer_set_background_color(about, GColorBlack);
+  
+  static char buffer [] = "Highscore\n999";
+  snprintf(buffer, sizeof(buffer), "Highscore\n%d", highscore);
   text_layer_set_text(hs, buffer);
-  text_layer_set_font(hs, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_font(hs, robotoR);
 	text_layer_set_text_alignment(hs, GTextAlignmentCenter);
+  text_layer_set_text_color(hs, GColorWhite);
+  text_layer_set_background_color(hs, GColorBlack);
+  
   // Adding those layers to the main menu
 	layer_add_child(window_get_root_layer(menu), text_layer_get_layer(title));
   layer_add_child(window_get_root_layer(menu), text_layer_get_layer(start));
@@ -336,6 +428,10 @@ void handle_init(void) {
 
 void handle_deinit(void) {
   persist_write_int(iKey, highscore);
+  fonts_unload_custom_font(robotoR);
+  fonts_unload_custom_font(robotoB);
+  fonts_unload_custom_font(robotoS);
+  fonts_unload_custom_font(robotoGame);
 	// Destroy the text layer
 	text_layer_destroy(title);
 	text_layer_destroy(start);

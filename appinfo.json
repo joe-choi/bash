@@ -7,12 +7,37 @@
     "longName": "born again simon with hands",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "characterRegex": "[0-9a-zA-Z!:]",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_TEXT_18",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[bash]",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_TITLE_33",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[7a-zA-Z06\\.\\[\\]@]",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_TEXT_14",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z!\\.]",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_TEXT_28",
+                "type": "font"
+            }
+        ]
     },
     "shortName": "bash",
     "uuid": "7c4ef682-a557-4059-873c-9255e65eb1fa",
     "versionCode": 1,
-    "versionLabel": "0.1",
+    "versionLabel": "0.6",
     "watchapp": {
         "watchface": false
     }
