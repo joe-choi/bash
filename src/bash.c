@@ -19,6 +19,8 @@ TextLayer *hs;
 TextLayer *option1;
 TextLayer *aboutMe;
 TextLayer *aboutMe2;
+TextLayer *input;
+TextLayer *nextRoundOrLoseMsg;
 
 GFont robotoB;
 GFont robotoR;
@@ -30,6 +32,7 @@ const int STARTING_CAP = 10;
 int capacity;
 int size;
 int verifIterator;
+int shakeAgain;
 int* sequence;
 static AppTimer* timer;
 bool onlyForReappearance = false;
@@ -70,15 +73,30 @@ static void unifiedVerifier (int action) {
   switch (action) {
     case 0:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED UP");
+      text_layer_set_text(input, "UP");
       break;
     case 1:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED MIDDLE");
+      text_layer_set_text(input, "MIDDLE");
       break;
     case 2:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED DOWN");
+      text_layer_set_text(input, "DOWN");
       break;
     case 3:
       APP_LOG(APP_LOG_LEVEL_INFO, "YOU SHOOK THE PEBBLE");
+      if (sequence [verifIterator - 1] == 3) {
+        shakeAgain ++;
+      } else {
+        shakeAgain = 0;
+      }
+      if (shakeAgain > 0) {
+        static char buffer[20];
+        snprintf(buffer, sizeof(buffer), "shook(%d)", shakeAgain);
+        text_layer_set_text(input, buffer);
+      } else {
+        text_layer_set_text(input, "shook");
+      }
       break;
     default:
       APP_LOG(APP_LOG_LEVEL_ERROR, "???");
@@ -86,14 +104,22 @@ static void unifiedVerifier (int action) {
   }
   static char buffer[30];
   if (potentialSuccessfulRound && rightAction) { // Moves onto the next round
+    text_layer_set_text(input, "");
     onlyForReappearance = true; // Only when round is passed!
+    layer_set_hidden((Layer*)input, true);
+    layer_set_hidden((Layer*)enterNow, true);
+    layer_set_hidden((Layer*)nextRoundOrLoseMsg, false);
     snprintf(buffer, sizeof(buffer), "Good job!\nNext round: %d", size + 1);
-    text_layer_set_text(enterNow, buffer);
+    text_layer_set_text(nextRoundOrLoseMsg, buffer);
     app_timer_register(1800, (AppTimerCallback)nextRound_callback, NULL);
     score += 10;
   } else if (!rightAction) {  // Lost the entire game
+    layer_set_hidden((Layer*)input, true);
+    layer_set_hidden((Layer*)enterNow, true);
+    layer_set_hidden((Layer*)nextRoundOrLoseMsg, false);
     snprintf(buffer, sizeof(buffer), "Game Over.\nScore: %d", score);
-    text_layer_set_text(enterNow, buffer);
+    text_layer_set_text(input, "");
+    text_layer_set_text(nextRoundOrLoseMsg, buffer);
     changeHighscoreIfNeeded();
     app_timer_register(2000, (AppTimerCallback)gameover_callback, NULL);
   }
@@ -115,21 +141,42 @@ static void sequence_config_provider (void *context) {
 }
 
 static void sequenceInput_load () {
+  shakeAgain = -1;
   APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Load");
   verifIterator = -1;
-  enterNow = text_layer_create(GRect(0,50,144,50));
+  enterNow = text_layer_create(GRect(0,15,144,45));
   text_layer_set_background_color(enterNow, GColorBlack);
   text_layer_set_font(enterNow, robotoR);
   text_layer_set_text_alignment(enterNow, GTextAlignmentCenter);
   text_layer_set_text_color(enterNow, GColorWhite);
   text_layer_set_text (enterNow, "Enter sequence now!");
+  
+  input = text_layer_create(GRect(0,60,144,30));
+  text_layer_set_background_color(input, GColorBlack);
+  text_layer_set_font(input, robotoGame);
+  text_layer_set_text_alignment(input, GTextAlignmentCenter);
+  text_layer_set_text_color(input, GColorWhite);
+  text_layer_set_text (input, "");
+  
+  nextRoundOrLoseMsg = text_layer_create(GRect(0,50,144,50));
+  text_layer_set_background_color(nextRoundOrLoseMsg, GColorBlack);
+  text_layer_set_font(nextRoundOrLoseMsg, robotoR);
+  text_layer_set_text_alignment(nextRoundOrLoseMsg, GTextAlignmentCenter);
+  text_layer_set_text_color(nextRoundOrLoseMsg, GColorWhite);
+  text_layer_set_text (nextRoundOrLoseMsg, "");
+  
+  layer_set_hidden((Layer*)nextRoundOrLoseMsg, true);
+  layer_add_child(window_get_root_layer(sequenceInput), text_layer_get_layer(nextRoundOrLoseMsg));
+  layer_add_child(window_get_root_layer(sequenceInput), text_layer_get_layer(input));
   layer_add_child(window_get_root_layer(sequenceInput), text_layer_get_layer(enterNow));
   accel_tap_service_subscribe(veriShake_handler);
 }
 
 static void sequenceInput_unload () {
   accel_tap_service_unsubscribe();
+  text_layer_destroy(input);
   text_layer_destroy(enterNow);
+  text_layer_destroy(nextRoundOrLoseMsg);
   window_destroy(sequenceInput);
   APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Unload");
 }
@@ -319,7 +366,7 @@ static void option1_handler(ClickRecognizerRef crr, void* context) {
   highscore = -1;
   changeHighscoreIfNeeded ();
   APP_LOG(APP_LOG_LEVEL_INFO, "Scores reset");
-  text_layer_set_text(option1, "Reset Highscore\n  ...Done!");
+  text_layer_set_text(option1, "Reset Highscore\n...Done!");
   app_timer_register(900, optionChangeBackFromConfirmation_callback, NULL);
 }
 
@@ -354,7 +401,7 @@ static void aboutWindow_load () {
   text_layer_set_text_color(aboutMe2, GColorWhite);
   text_layer_set_background_color(aboutMe2, GColorBlack);
   text_layer_set_font(aboutMe2, robotoS);
-  text_layer_set_text(aboutMe2, "born again simon with hands\n[Simon for Pebble]\n\n\n\nBy Joseph Choi\njoechoi7@gmail.com\nv0.6");
+  text_layer_set_text(aboutMe2, "born again simon with hands\n[Simon for Pebble]\n\n\n\nBy Joseph Choi\njoechoi7@gmail.com\nv0.8");
   layer_add_child(window_get_root_layer(aboutWindow), text_layer_get_layer(aboutMe));
   layer_add_child(window_get_root_layer(aboutWindow), text_layer_get_layer(aboutMe2));
 }
