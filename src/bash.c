@@ -320,10 +320,14 @@ static void ready_load () {
   text_layer_set_text_alignment(countdown, GTextAlignmentCenter);
   text_layer_set_text(countdown, "Ready...");
   layer_add_child(window_get_root_layer(ready), text_layer_get_layer(countdown));
-  app_timer_register(2000, (AppTimerCallback)changeCountdown_callback, NULL);
+  timer = app_timer_register(2000, (AppTimerCallback)changeCountdown_callback, NULL);
 }
 
 static void ready_unload () {
+  if (timer != NULL) {
+    app_timer_cancel(timer);
+    timer = NULL;
+  } 
   text_layer_destroy(countdown);
   window_destroy (ready);
   APP_LOG(APP_LOG_LEVEL_INFO, "Ready Unload");
