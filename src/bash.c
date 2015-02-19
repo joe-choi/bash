@@ -1,6 +1,8 @@
 #include <pebble.h>
 #include "bash.h"
+#include "logger.h"
 
+// Window pointers
 Window *ready;
 Window *menu;
 Window *game;
@@ -8,6 +10,7 @@ Window *sequenceInput;
 Window *optionsWindow;
 Window *aboutWindow;
 
+// TextLayer pointers
 TextLayer *title;
 TextLayer *start;
 TextLayer *options;
@@ -22,11 +25,13 @@ TextLayer *aboutMe2;
 TextLayer *input;
 TextLayer *nextRoundOrLoseMsg;
 
+// Font pointers
 GFont robotoB;
 GFont robotoR;
 GFont robotoS;
 GFont robotoGame;
 
+// Constants and variables for game logic
 const int NUM_COMMANDS = 4;
 const int STARTING_CAP = 10;
 int capacity;
@@ -57,7 +62,7 @@ static void gameover_callback () {
 static void changeHighscoreIfNeeded () {
   if (score > highscore) {
     highscore = score;
-    APP_LOG(APP_LOG_LEVEL_INFO, "Changing highscore");
+    simple_log(INFO, "Changing highscore");
     static char buffer[20];
     snprintf(buffer, sizeof(buffer), "Highscore\n%d", highscore);
     text_layer_set_text(hs, buffer);
@@ -69,23 +74,22 @@ static void unifiedVerifier (int action) {
   verifIterator ++;
   bool potentialSuccessfulRound = verifIterator + 1 == size;
   bool rightAction = sequence [verifIterator] == action;
-  // For info purposes only
   switch (action) {
-    case 0:
-      APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED UP");
+    case UP:
+      simple_log(INFO, "YOU PRESSED UP");
       text_layer_set_text(input, "UP");
       break;
-    case 1:
-      APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED MIDDLE");
+    case MIDDLE:
+      simple_log(INFO, "YOU PRESSED MIDDLE");
       text_layer_set_text(input, "MIDDLE");
       break;
-    case 2:
-      APP_LOG(APP_LOG_LEVEL_INFO, "YOU PRESSED DOWN");
+    case DOWN:
+      simple_log(INFO, "YOU PRESSED DOWN");
       text_layer_set_text(input, "DOWN");
       break;
-    case 3:
-      APP_LOG(APP_LOG_LEVEL_INFO, "YOU SHOOK THE PEBBLE");
-      if (sequence [verifIterator - 1] == 3) {
+    case SHAKE:
+      simple_log(INFO, "YOU SHOOK THE PEBBLE");
+      if (verifIterator > 0 && sequence [verifIterator - 1] == 3) {
         shakeAgain ++;
       } else {
         shakeAgain = 0;
@@ -99,7 +103,7 @@ static void unifiedVerifier (int action) {
       }
       break;
     default:
-      APP_LOG(APP_LOG_LEVEL_ERROR, "???");
+      simple_log(ERROR, "???");
       break;
   }
   static char buffer[30];
@@ -126,7 +130,7 @@ static void unifiedVerifier (int action) {
 }
 
 static void veriShake_handler(AccelAxisType axis, int32_t direction) {
-  unifiedVerifier (3);
+  unifiedVerifier (SHAKE);
 }
 
 static void veriButton_handler(ClickRecognizerRef recognizer, void *context) {
@@ -142,7 +146,7 @@ static void sequence_config_provider (void *context) {
 
 static void sequenceInput_load () {
   shakeAgain = -1;
-  APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Load");
+  simple_log(INFO, "SequenceInput Load");
   verifIterator = -1;
   enterNow = text_layer_create(GRect(0,15,144,45));
   text_layer_set_background_color(enterNow, GColorBlack);
@@ -178,7 +182,7 @@ static void sequenceInput_unload () {
   text_layer_destroy(enterNow);
   text_layer_destroy(nextRoundOrLoseMsg);
   window_destroy(sequenceInput);
-  APP_LOG(APP_LOG_LEVEL_INFO, "SequenceInput Unload");
+  simple_log(INFO, "SequenceInput Unload");
 }
 
 static void sequenceInput_callback () {
@@ -215,12 +219,12 @@ static void changeAction (void* move) {
 }
 
 static void addElement() {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Adding another element.");
+  simple_log(INFO, "Adding another element.");
   size ++;
   if (size <= capacity) {
     sequence [size - 1] = rand() % NUM_COMMANDS; // 0,1,2,3
   } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Reached capacity on ACTIONS, doubling");
+    simple_log(INFO, "Reached capacity on ACTIONS, doubling");
     int* destroy = sequence;
     sequence = malloc (2 * (sizeof (destroy) / sizeof (int)));
     memcpy (sequence, destroy, (size - 1) * sizeof(int));
@@ -231,18 +235,18 @@ static void addElement() {
 }
 
 static void displaySequence(void* iteration) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Displaying sequence");
+  simple_log(INFO, "Displaying sequence");
   timer = NULL;
   if ((int)iteration < size) {
     changeAction ((void*)sequence[(int)iteration]);
     if (sequence[(int)iteration] == 0) {
-      APP_LOG(APP_LOG_LEVEL_INFO, "up");
+      simple_log(INFO, "up");
     } else if (sequence [(int)iteration] == 1) {
-      APP_LOG(APP_LOG_LEVEL_INFO, "middle");
+      simple_log(INFO, "middle");
     } else if (sequence [(int)iteration] == 2) {
-      APP_LOG(APP_LOG_LEVEL_INFO, "down");
+      simple_log(INFO, "down");
     } else {
-      APP_LOG(APP_LOG_LEVEL_INFO, "shake");
+      simple_log(INFO, "shake");
     }
     timer = app_timer_register(1050, (AppTimerCallback)displaySequence, (void*)((int)iteration+1));
   } else {
@@ -251,7 +255,7 @@ static void displaySequence(void* iteration) {
 }
 
 static void game_load () {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Game Load");
+  simple_log(INFO, "Game Load");
   action = text_layer_create(GRect(0,50,144,50));
   text_layer_set_background_color(action, GColorBlack);
   text_layer_set_text_color(action, GColorWhite);
@@ -279,13 +283,13 @@ static void game_unload () {
   window_destroy(game);
   sequence = NULL;
   onlyForReappearance = false;
-  APP_LOG(APP_LOG_LEVEL_INFO, "Game Unload");
+  simple_log(INFO, "Game Unload");
 }
 
 static void game_appear () {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Game Appear function runs");
+  simple_log(INFO, "Game Appear function runs");
   if (onlyForReappearance) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Game Reappeared");
+    simple_log(INFO, "Game Reappeared");
     text_layer_set_text(action, "");
     addElement();
     displaySequence (0);
@@ -311,7 +315,7 @@ static void changeCountdown_callback () {
 }
 
 static void ready_load () {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Ready Load");
+  simple_log(INFO, "Ready Load");
   // output sequence.
   countdown = text_layer_create(GRect(0,60,144,50));
   text_layer_set_font(countdown, robotoGame);
@@ -326,11 +330,11 @@ static void ready_load () {
 static void ready_unload () {
   text_layer_destroy(countdown);
   window_destroy (ready);
-  APP_LOG(APP_LOG_LEVEL_INFO, "Ready Unload");
+  simple_log(INFO, "Ready Unload");
 }
 
 static void ready_handler (ClickRecognizerRef recognizer, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Clicked Start");
+  simple_log(INFO, "Clicked Start");
   ready = window_create ();
   window_set_background_color(ready, GColorBlack);
   window_set_fullscreen(ready, true);
@@ -341,8 +345,10 @@ static void ready_handler (ClickRecognizerRef recognizer, void *context) {
   window_stack_push (ready, true);
 }
 
+// Options Window Handlers
+/////////////////////////////////////////////////////////////////////
 static void optionsWindow_load () {
-  APP_LOG(APP_LOG_LEVEL_INFO, "OptionsWindow Load");
+  simple_log(INFO, "OptionsWindow Load");
   option1 = text_layer_create(GRect(0,10,144,40));
   text_layer_set_font(option1, robotoR);
   text_layer_set_text_alignment(option1, GTextAlignmentCenter);
@@ -355,7 +361,7 @@ static void optionsWindow_load () {
 static void optionsWindow_unload () {
   text_layer_destroy(option1);
   window_destroy(optionsWindow);
-  APP_LOG(APP_LOG_LEVEL_INFO, "OptionsWindow unload");
+  simple_log(INFO, "OptionsWindow unload");
 }
 
 static void optionChangeBackFromConfirmation_callback () {
@@ -365,7 +371,7 @@ static void optionChangeBackFromConfirmation_callback () {
 static void option1_handler(ClickRecognizerRef crr, void* context) {
   highscore = -1;
   changeHighscoreIfNeeded ();
-  APP_LOG(APP_LOG_LEVEL_INFO, "Scores reset");
+  simple_log(INFO, "Scores reset");
   text_layer_set_text(option1, "Reset Highscore\n...Done!");
   app_timer_register(900, optionChangeBackFromConfirmation_callback, NULL);
 }
@@ -375,7 +381,7 @@ static void optionsWindow_click_config_provider (void *context)  {
 }
 
 static void optionsWindow_handler(ClickRecognizerRef recognizer, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Click options");
+  simple_log(INFO, "Click options");
   optionsWindow = window_create ();
   window_set_fullscreen(optionsWindow, true);
   window_set_background_color(optionsWindow, GColorBlack);
@@ -386,9 +392,12 @@ static void optionsWindow_handler(ClickRecognizerRef recognizer, void *context) 
   });
   window_stack_push (optionsWindow, true);
 }
+/////////////////////////////////////////////////////////////////////
 
+// About Window handlers
+/////////////////////////////////////////////////////////////////////
 static void aboutWindow_load () {
-  APP_LOG(APP_LOG_LEVEL_INFO, "AboutWindow Load");
+  simple_log(INFO, "AboutWindow Load");
   aboutMe = text_layer_create(GRect(0,5,144,20));
   text_layer_set_text_alignment(aboutMe, GTextAlignmentCenter);
   text_layer_set_text_color(aboutMe, GColorWhite);
@@ -409,11 +418,11 @@ static void aboutWindow_load () {
 static void aboutWindow_unload () {
   text_layer_destroy(aboutMe);
   window_destroy(aboutWindow);
-  APP_LOG(APP_LOG_LEVEL_INFO, "AboutWindow Unload");
+  simple_log(INFO, "AboutWindow Unload");
 }
 
 static void aboutWindow_handler(ClickRecognizerRef rec, void* context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Click About");
+  simple_log(INFO, "Click About");
   aboutWindow = window_create();
   window_set_fullscreen(aboutWindow, true);
   window_set_background_color(aboutWindow, GColorBlack);
@@ -423,6 +432,7 @@ static void aboutWindow_handler(ClickRecognizerRef rec, void* context) {
   });
   window_stack_push (aboutWindow, true);
 }
+/////////////////////////////////////////////////////////////////////
 
 static void config_provider (void *context) {
   window_single_click_subscribe(BUTTON_ID_UP, ready_handler);
@@ -430,6 +440,7 @@ static void config_provider (void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, aboutWindow_handler);
 }
 
+// Initialize main window, fonts, location of text
 void handle_init(void) {
   // Main Menu
   if (persist_exists(iKey)) {

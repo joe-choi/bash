@@ -9,27 +9,31 @@
     "resources": {
         "media": [
             {
-                "characterRegex": "[0-9a-zA-Z!:\\.]",
+                "characterRegex": "[a-zA-Z!\\.0-9()]",
+                "compatibility": "2.7",
                 "file": "fonts/Roboto-Bold.ttf",
-                "name": "FONT_ROBOTO_BOLD_TEXT_18",
+                "name": "FONT_ROBOTO_BOLD_TEXT_28",
                 "type": "font"
             },
             {
-                "characterRegex": "[bash]",
-                "file": "fonts/Roboto-Bold.ttf",
-                "name": "FONT_ROBOTO_BOLD_TITLE_33",
-                "type": "font"
-            },
-            {
-                "characterRegex": "[7a-zA-Z06\\.\\[\\]@]",
+                "characterRegex": "[7a-zA-Z0-9\\.\\[\\]@]",
+                "compatibility": "2.7",
                 "file": "fonts/Roboto-Bold.ttf",
                 "name": "FONT_ROBOTO_BOLD_TEXT_14",
                 "type": "font"
             },
             {
-                "characterRegex": "[a-zA-Z!\\.0-9()]",
+                "characterRegex": "[bash]",
+                "compatibility": "2.7",
                 "file": "fonts/Roboto-Bold.ttf",
-                "name": "FONT_ROBOTO_BOLD_TEXT_28",
+                "name": "FONT_ROBOTO_BOLD_TITLE_33",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9a-zA-Z!:\\.]",
+                "compatibility": "2.7",
+                "file": "fonts/Roboto-Bold.ttf",
+                "name": "FONT_ROBOTO_BOLD_TEXT_18",
                 "type": "font"
             }
         ]
